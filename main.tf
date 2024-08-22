@@ -6,7 +6,7 @@ provider "aws" {
 # Remote State Configuration (Optional but Recommended)
 terraform {
   backend "s3" {
-    bucket         = "test-jenkins-123456"
+    bucket         = "jenkins-test-123456"
     key            = "testing/terraform.tfstate"
     region         = "us-west-2"
   }
