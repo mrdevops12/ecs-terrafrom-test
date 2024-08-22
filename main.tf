@@ -1,7 +1,18 @@
+# Provider Configuration
 provider "aws" {
   region = "us-west-2"
 }
 
+# Remote State Configuration (Optional but Recommended)
+terraform {
+  backend "s3" {
+    bucket         = "your-terraform-state-bucket"
+    key            = "path/to/terraform.tfstate"
+    region         = "us-west-2"
+  }
+}
+
+# VPC Setup
 resource "aws_vpc" "ecs_vpc" {
   cidr_block = "10.0.0.0/16"
 
@@ -10,6 +21,7 @@ resource "aws_vpc" "ecs_vpc" {
   }
 }
 
+# Subnets
 resource "aws_subnet" "ecs_subnet_a" {
   vpc_id                  = aws_vpc.ecs_vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -32,6 +44,7 @@ resource "aws_subnet" "ecs_subnet_b" {
   }
 }
 
+# Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.ecs_vpc.id
 
@@ -40,6 +53,7 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
+# Route Table and Associations
 resource "aws_route_table" "public_route" {
   vpc_id = aws_vpc.ecs_vpc.id
 
@@ -63,6 +77,7 @@ resource "aws_route_table_association" "subnet_b_association" {
   route_table_id = aws_route_table.public_route.id
 }
 
+# Security Group
 resource "aws_security_group" "ecs_security_group" {
   vpc_id = aws_vpc.ecs_vpc.id
 
@@ -85,6 +100,7 @@ resource "aws_security_group" "ecs_security_group" {
   }
 }
 
+# Application Load Balancer
 resource "aws_lb" "app" {
   name               = "ecs-app-lb"
   internal           = false
@@ -97,12 +113,13 @@ resource "aws_lb" "app" {
   }
 }
 
+# Target Group
 resource "aws_lb_target_group" "app_target_group" {
-  name       = "ecs-app-tg"
-  port       = 80
-  protocol   = "HTTP"
-  vpc_id     = aws_vpc.ecs_vpc.id
-  target_type = "ip"  # Updated to 'ip'
+  name        = "ecs-app-tg"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.ecs_vpc.id
+  target_type = "ip"  # 'ip' type is compatible with Fargate
 
   health_check {
     path                = "/"
@@ -117,6 +134,7 @@ resource "aws_lb_target_group" "app_target_group" {
   }
 }
 
+# Listener
 resource "aws_lb_listener" "app_listener" {
   load_balancer_arn = aws_lb.app.arn
   port              = "80"
@@ -128,6 +146,7 @@ resource "aws_lb_listener" "app_listener" {
   }
 }
 
+# IAM Role for ECS Tasks
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "ecsTaskExecutionRole"
 
@@ -151,10 +170,12 @@ resource "aws_iam_policy_attachment" "ecs_task_execution_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "ecs-cluster-high-availability"
 }
 
+# ECS Task Definition
 resource "aws_ecs_task_definition" "app" {
   family                   = "ecs-task-family"
   network_mode             = "awsvpc"
@@ -178,6 +199,7 @@ resource "aws_ecs_task_definition" "app" {
   ])
 }
 
+# ECS Service
 resource "aws_ecs_service" "app_service" {
   name            = "ecs-service"
   cluster         = aws_ecs_cluster.main.id
