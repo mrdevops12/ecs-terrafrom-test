@@ -3,8 +3,7 @@ pipeline {
 
     environment {
         AWS_DEFAULT_REGION = 'us-west-2'
-        TF_VAR_key_name = 'asecguru'
-        AWS_CREDENTIALS = credentials('aws-credentials')
+        AWS_CREDENTIALS = credentials('aws-credentials')  // Ensure you have configured these credentials in Jenkins
     }
 
     stages {
